@@ -4,7 +4,9 @@ import timm
 import urllib.request
 
 MODEL_URL = "https://huggingface.co/Meghakumarr14/lung-disease-model/resolve/main/final_best_senet154.pth"
-MODEL_PATH = "model/final_best_senet154.pth"
+
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "..", "model", "final_best_senet154.pth")
+MODEL_PATH = os.path.abspath(MODEL_PATH)
 
 class_names = ['Normal', 'Tuberculosis', 'covid', 'lung-opacity', 'pneumonia']
 
