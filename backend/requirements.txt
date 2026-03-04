@@ -1,5 +1,10 @@
+fastapi
+uvicorn
 torch
 torchvision
 timm
-gradio
-Pillow
+pillow
+opencv-python-headless
+numpy
+python-multipart
+reportlab
