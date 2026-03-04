@@ -1,0 +1,17 @@
+# Python environments
+venv
+.venv
+
+# Python cache
+__pycache__
+*.pyc
+
+# React dependencies
+node_modules
+
+# Temporary images
+temp_*.jpg
+temp_*.png
+
+# OS files
+.DS_Store
