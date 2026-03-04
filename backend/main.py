@@ -2,19 +2,18 @@ import base64
 import cv2
 import numpy as np
 
-from explainability.gradcam import generate_gradcam
-from inference.predict import predict_with_top_class
-
+# Corrected imports
+from backend.explainability.gradcam import generate_gradcam
+from backend.inference.predict import predict_with_top_class
+from backend.inference.predict import predict_image
+from backend.report_generator import generate_medical_report
 
 from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
+
 from PIL import Image
 import io
-
-from inference.predict import predict_image
-
-from fastapi.responses import StreamingResponse
-from report_generator import generate_medical_report
 
 app = FastAPI(title="Lung Disease Classification API")
 
@@ -31,25 +30,30 @@ app.add_middleware(
 def home():
     return {"status": "API is running"}
 
+
+# -----------------------------
+# Prediction API
+# -----------------------------
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
-    # Read image
+
     image_bytes = await file.read()
     image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
 
-    # TEMP: save image to disk for reuse of predict_image()
     temp_path = "temp.jpg"
     image.save(temp_path)
 
-    # Get prediction
     result = predict_image(temp_path)
 
-    return {
-        "predictions": result
-    }
+    return {"predictions": result}
 
+
+# -----------------------------
+# GradCAM API
+# -----------------------------
 @app.post("/gradcam")
 async def gradcam(file: UploadFile = File(...)):
+
     image_bytes = await file.read()
     image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
 
@@ -58,7 +62,6 @@ async def gradcam(file: UploadFile = File(...)):
 
     heatmap, original_image = generate_gradcam(temp_path)
 
-    # Overlay heatmap
     heatmap = np.uint8(255 * heatmap)
     heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
 
@@ -68,28 +71,30 @@ async def gradcam(file: UploadFile = File(...)):
     _, buffer = cv2.imencode(".jpg", overlay)
     encoded_image = base64.b64encode(buffer).decode("utf-8")
 
-    return {
-        "gradcam_image": encoded_image
-    }
+    return {"gradcam_image": encoded_image}
 
+
+# -----------------------------
+# Combined Analysis API
+# -----------------------------
 @app.post("/analyze")
 async def analyze(file: UploadFile = File(...)):
+
     image_bytes = await file.read()
     image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
 
     temp_path = "temp_analyze.jpg"
     image.save(temp_path)
 
-    # 1️⃣ Prediction
+    # Prediction
     prediction_result = predict_with_top_class(temp_path)
 
-    # 2️⃣ Grad-CAM for SAME prediction
+    # GradCAM
     heatmap, original_image = generate_gradcam(
         temp_path,
         prediction_result["class_index"]
     )
 
-    # Overlay heatmap
     heatmap = np.uint8(255 * heatmap)
     heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
 
@@ -105,8 +110,13 @@ async def analyze(file: UploadFile = File(...)):
         "gradcam_image": encoded_image
     }
 
+
+# -----------------------------
+# PDF Report Generator
+# -----------------------------
 @app.post("/generate-report")
 async def generate_report(payload: dict):
+
     pdf_buffer = generate_medical_report(payload)
 
     return StreamingResponse(
@@ -117,55 +127,69 @@ async def generate_report(payload: dict):
         },
     )
 
+
+# -----------------------------
+# Medical Chatbot
+# -----------------------------
 @app.post("/chat")
 async def medical_chat(payload: dict):
+
     disease = payload.get("disease")
     question = payload.get("question")
 
     medical_knowledge = {
+
         "Pneumonia": {
             "description": "Pneumonia is an infection that inflames air sacs in one or both lungs.",
             "symptoms": "Common symptoms include cough, fever, chills, and difficulty breathing.",
             "precautions": "Rest, hydration, prescribed antibiotics (if bacterial), and medical supervision.",
-            "severity": "Severity depends on age and immune status. Elderly and infants are higher risk."
+            "severity": "Severity depends on age and immune status."
         },
+
         "Tuberculosis": {
             "description": "Tuberculosis is a bacterial infection that primarily affects the lungs.",
             "symptoms": "Persistent cough, weight loss, night sweats, fever.",
             "precautions": "Long-term antibiotic treatment and medical monitoring.",
-            "severity": "Untreated TB can be serious but is treatable with proper medication."
+            "severity": "Untreated TB can be serious but is treatable."
         },
+
         "covid": {
             "description": "COVID-19 is a viral respiratory infection caused by SARS-CoV-2.",
-            "symptoms": "Fever, cough, fatigue, loss of smell, breathing difficulty.",
-            "precautions": "Isolation, hydration, monitoring oxygen levels.",
-            "severity": "Severity varies; high-risk individuals require close monitoring."
+            "symptoms": "Fever, cough, fatigue, breathing difficulty.",
+            "precautions": "Isolation, hydration, oxygen monitoring.",
+            "severity": "Severity varies by patient condition."
         },
+
         "lung-opacity": {
-            "description": "Lung opacity refers to areas in the lung that appear denser on imaging.",
-            "symptoms": "May vary depending on underlying cause.",
+            "description": "Lung opacity refers to dense areas seen in lung imaging.",
+            "symptoms": "Depends on underlying condition.",
             "precautions": "Further medical evaluation required.",
-            "severity": "Requires clinical correlation for accurate diagnosis."
+            "severity": "Requires clinical diagnosis."
         },
+
         "Normal": {
-            "description": "The chest X-ray appears normal with no significant abnormalities detected.",
-            "symptoms": "No major pathological signs detected.",
+            "description": "The chest X-ray appears normal with no abnormalities.",
+            "symptoms": "No pathological signs detected.",
             "precautions": "Maintain healthy lifestyle.",
-            "severity": "No immediate concern based on imaging."
+            "severity": "No medical concern detected."
         }
     }
 
-    response_text = "Please consult a healthcare professional for medical advice."
+    response_text = "Please consult a healthcare professional."
 
     if disease in medical_knowledge:
+
         info = medical_knowledge[disease]
 
         if "symptom" in question.lower():
             response_text = info["symptoms"]
+
         elif "precaution" in question.lower():
             response_text = info["precautions"]
+
         elif "serious" in question.lower() or "severity" in question.lower():
             response_text = info["severity"]
+
         else:
             response_text = info["description"]
 
