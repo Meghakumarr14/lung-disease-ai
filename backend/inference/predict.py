@@ -3,7 +3,7 @@ import torch.nn.functional as F
 from torchvision import transforms
 from PIL import Image
 
-from inference.model_loader import load_model, CLASS_NAMES
+from backend.inference.model_loader import load_model, CLASS_NAMES
 
 # Load model ONCE
 model, device = load_model()
