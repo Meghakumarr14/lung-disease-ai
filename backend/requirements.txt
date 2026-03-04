@@ -1,10 +1,10 @@
 fastapi
 uvicorn
-torch
-torchvision
-timm
-pillow
-opencv-python-headless
 numpy
-python-multipart
+opencv-python-headless
+Pillow
 reportlab
+timm
+torch==2.2.2+cpu
+torchvision==0.17.2+cpu
+--extra-index-url https://download.pytorch.org/whl/cpu
