@@ -5,7 +5,7 @@ import numpy as np
 from torchvision import transforms
 from PIL import Image
 
-from inference.model_loader import load_model
+from backend.inference.model_loader import load_model
 
 # Load model once
 model, device = load_model()
