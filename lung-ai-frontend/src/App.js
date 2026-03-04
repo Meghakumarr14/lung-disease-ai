@@ -66,7 +66,7 @@ function App() {
 
     try {
       const response = await axios.post(
-        "http://127.0.0.1:8000/analyze",
+        "https://meghakumarr14-lung-disease-backend.hf.space/analyze",
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
@@ -94,7 +94,7 @@ function App() {
     };
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/generate-report", {
+      const response = await fetch("https://meghakumarr14-lung-disease-backend.hf.space/generate-report", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -125,7 +125,7 @@ function App() {
     setChatMessages((prev) => [...prev, userMessage]);
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/chat", {
+      const response = await fetch("https://meghakumarr14-lung-disease-backend.hf.space/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
